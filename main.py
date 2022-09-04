@@ -3,8 +3,9 @@ from multiprocessing import current_process
 from tracemalloc import start
 from turtle import width
 import pygame
+import time
 
-NODE_WIDTH = 40
+NODE_WIDTH = 80
 class Node:
     def __init__(self, row, col):
         self.row = row
@@ -29,8 +30,8 @@ class Node:
         self.closed_node = False
 
     def get_pos(self):
-        row = math.floor(self.row/NODE_WIDTH)
-        col = math.floor(self.col/NODE_WIDTH)
+        row = math.ceil(self.row/NODE_WIDTH)
+        col = math.ceil(self.col/NODE_WIDTH)
         return row, col
     
     def make_start(self):
@@ -130,9 +131,10 @@ def get_f_score(node, start, end):
 def get_node_distance (start_node, end_node):
     x_pos_start, y_pos_start = start_node.get_pos()
     x_pos_end, y_pos_end = end_node.get_pos()
+    
 
-    distance = ((x_pos_start - x_pos_end)*(x_pos_start - x_pos_end))+((y_pos_start-y_pos_end)*(y_pos_start-y_pos_end))
-
+    #distance = ((x_pos_start - x_pos_end)*(x_pos_start - x_pos_end))+((y_pos_start-y_pos_end)*(y_pos_start-y_pos_end))
+    distance = abs(x_pos_start - x_pos_end) + abs(y_pos_start-y_pos_end)
     return distance
 
     
@@ -227,87 +229,69 @@ def main():
                 if e_n != None:
                     end_node = e_n
             
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.KEYDOWN and start_node != None:
+                #add start node to OPEN
                 if len(open_set) == 0:
-                    open_set.append(start_node)
+                    open_set.append(start_node) 
                     current = None
                 f_score_arr = []
+                
+                #loop with SPACE BAR
                 if event.key == pygame.K_SPACE:
                     for i in range(len(open_set)):
                         f_score_arr.append(open_set[i].get_f_score())
-                
+                #current = node in OPEN with lowest socre
                 index = f_score_arr.index(min(f_score_arr))
-                current = open_set[index]
+                current = open_set[index] 
                 
+                #remove current from OPEN
+                open_set.remove(current)
+
+                #add current to CLOSED
                 closed_set.append(current)
                 current.make_close()
-                open_set.remove(current)
+
                 draw_rect(screen, current)
-
-                neighbor_arr = get_neighbor(current, NUM_NODE)
-                for n in neighbor_arr:
-                    neighbor_node = get_node(node_arr, n)
-                    if n != None or neighbor_node.is_closed() == False:
-                        if neighbor_node.is_wall() == False:
-                            neighbor_node.set_parent(current)
-
-                            if neighbor_node == end_node:
-                                print("Success")
-                                break
-                            else:
-                                neighbor_g_score = get_node_distance(current, start_node) + get_node_distance(neighbor_node, current)
-                                neighbor_h_score = get_node_distance(neighbor_node, end_node)
-                                neighbor_node.set_g_score(neighbor_g_score)
-                                neighbor_node.set_h_score(neighbor_h_score)
-
-                                new_neighbor_g_score = get_node_distance(neighbor_node, start_node)
-                                
-                                print('Total Score= ', neighbor_node.get_f_score(),'current_g: ',neighbor_g_score, ' new_g: ', new_neighbor_g_score)
-                                if new_neighbor_g_score < neighbor_g_score or neighbor_node.is_open() == False:
-                                    neighbor_node.set_g_score(new_neighbor_g_score)
-
-                                    if neighbor_node.is_open() == False:
-                                        neighbor_node.make_open()
-                                        open_set.append(neighbor_node)
-
-
-                    draw_rect(screen, neighbor_node)
-                print('------------')
-
-
-
-
-
-                                
-                                    
-
-
-
-                '''
-                if current == end_node:
-                    print ('Success')
-                    break
-
-                neighbor_arr = get_neighbor(current, NUM_NODE)
-
-                for n in neighbor_arr:
-                    neighbor_node = get_node(node_arr, n)
-                    if n != None or neighbor_node.is_closed() == False:
-                        if neighbor_node.is_wall() == False:
-
-                            neighbor_node_g_score = get_node_distance(neighbor_node, start_node)
-                            neighbor_node_h_score = get_node_distance(neighbor_node, end_node)
-
-                            neighbor_node.set_g_score(neighbor_node_g_score + current.get_g_score())
-                            neighbor_node.set_h_score(neighbor_node)
-
-
-
-                            #get distance to re
-                '''
-                    
                 
+                #if current is the target node, return
+                if current == end_node:
+                    print("Success")
+                
+                #for neighbour if the current node
+                neighbor_arr = get_neighbor(current, NUM_NODE)
+                print("---")
+                for n in neighbor_arr:
+                    
+                    #if neighbor is not traversable 
+                    if n != None:
+                        neighbor_node = get_node(node_arr, n) 
+                        
+                        # or neighbor is in closed, skip to next neighboit
+                        if neighbor_node.is_closed() == True or neighbor_node.is_wall() == True:
+                            continue
+                        
+                        #current path to neighbor
+                        neighbor_g_score = get_node_distance(current, start_node) + get_node_distance(neighbor_node, current)
+                        neighbor_h_score = get_node_distance(neighbor_node, end_node)
+                        neighbor_node.set_g_score(neighbor_g_score)
+                        neighbor_node.set_h_score(neighbor_h_score)
 
+                        
+
+                        #new path to neighbor
+                        new_neighbor_g_score = get_node_distance(neighbor_node, start_node)
+                        print("n->", n,"g= ", neighbor_g_score, "  g2= ", new_neighbor_g_score,"  h= ", neighbor_h_score)
+
+                        #if new path to neighbor is shorter or neighbor is not in open
+                        if new_neighbor_g_score < neighbor_g_score or neighbor_node.is_open() == False:
+                            neighbor_node.set_g_score(new_neighbor_g_score)
+
+                            #to-do: set parent of neighbor to current
+
+                            if neighbor_node.is_open() == False:
+                                neighbor_node.make_open()
+                                open_set.append(neighbor_node)
+                        draw_rect(screen, neighbor_node)
             
 
             
