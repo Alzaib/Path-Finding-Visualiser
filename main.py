@@ -1,11 +1,12 @@
 import math
 from multiprocessing import current_process
+from sre_constants import SUCCESS
 from tracemalloc import start
 from turtle import width
 import pygame
 import time
 
-NODE_WIDTH = 80
+NODE_WIDTH = 40
 class Node:
     def __init__(self, row, col):
         self.row = row
@@ -57,6 +58,10 @@ class Node:
         if self.start_node == False and self.end_node == False:
             self.color = 'GREEN'
             self.closed_node = True
+    
+    def make_path(self):
+        if self.start_node == False and self.end_node == False:
+            self.color = 'BLUE'
 
     def is_start(self):
         if self.wall_node == False:
@@ -78,8 +83,8 @@ class Node:
     def set_parent(self, parent_node):
         self.parent = parent_node
 
-    def get_parent(self, parent_node):
-        return parent_node
+    def get_parent(self):
+        return self.parent
 
     def get_g_score(self):
         return self.g
@@ -112,21 +117,9 @@ def draw_rect(surface,node):
     x_dis = rect[0] + NODE_WIDTH/2
     y_dis = rect[1] + NODE_WIDTH/2
     
-    #if f_score != '0':
-    surface.blit(f_score_surface, (x_dis, y_dis))
+    if f_score != '0':
+        surface.blit(f_score_surface, (x_dis, y_dis))
 
-def get_f_score(node, start, end):
-    x_pos, y_pos = node.get_pos()
-    x_pos_start, y_pos_start = start.get_pos()
-    x_pos_end, y_pos_end = end.get_pos()
-
-    #g cost: distance from current node to end node
-    g = ((x_pos - x_pos_end)*(x_pos - x_pos_end))+((y_pos-y_pos_end)*(y_pos-y_pos_end))
-    #h cost: distance from current node to start node
-    h = ((x_pos - x_pos_start)*(x_pos - y_pos_start))+((y_pos-x_pos_start)*(y_pos-y_pos_start))
-    #f cost: g+h
-    f = g + h
-    return f, g, h
 
 def get_node_distance (start_node, end_node):
     x_pos_start, y_pos_start = start_node.get_pos()
@@ -151,13 +144,13 @@ def get_neighbor(node, num_nodes):
     
     left, right, up, down = None, None, None, None
 
-    if (x_pos-1>0):
+    if (x_pos-1>=0):
         left = (x_pos -1, y_pos)
 
     if (x_pos+1<num_nodes):
         right = (x_pos +1, y_pos)
 
-    if (y_pos-1>0):
+    if (y_pos-1>=0):
         up = (x_pos, y_pos-1)
 
     if (y_pos+1<num_nodes):
@@ -212,6 +205,10 @@ def main():
     open_set = []
     closed_set = []
 
+    traceback_node_arr = []
+
+    success = False
+
 
     while True:
         for event in pygame.event.get():
@@ -229,7 +226,7 @@ def main():
                 if e_n != None:
                     end_node = e_n
             
-            if event.type == pygame.KEYDOWN and start_node != None:
+            if event.type == pygame.KEYDOWN and start_node != None and success !=True:
                 #add start node to OPEN
                 if len(open_set) == 0:
                     open_set.append(start_node) 
@@ -256,10 +253,11 @@ def main():
                 #if current is the target node, return
                 if current == end_node:
                     print("Success")
+                    traceback_node = end_node
+                    success = True
                 
                 #for neighbour if the current node
                 neighbor_arr = get_neighbor(current, NUM_NODE)
-                print("---")
                 for n in neighbor_arr:
                     
                     #if neighbor is not traversable 
@@ -271,27 +269,40 @@ def main():
                             continue
                         
                         #current path to neighbor
-                        neighbor_g_score = get_node_distance(current, start_node) + get_node_distance(neighbor_node, current)
+                        #neighbor_g_score = get_node_distance(current, start_node) + get_node_distance(neighbor_node, current)
+                        neighbor_g_score = current.get_g_score() + get_node_distance(neighbor_node, current)
                         neighbor_h_score = get_node_distance(neighbor_node, end_node)
                         neighbor_node.set_g_score(neighbor_g_score)
                         neighbor_node.set_h_score(neighbor_h_score)
 
-                        
+                        #neighbor_node.set_parent(current)
 
                         #new path to neighbor
                         new_neighbor_g_score = get_node_distance(neighbor_node, start_node)
-                        print("n->", n,"g= ", neighbor_g_score, "  g2= ", new_neighbor_g_score,"  h= ", neighbor_h_score)
+                        #print("n->", n,"g= ", neighbor_g_score, "  g2= ", new_neighbor_g_score,"  h= ", neighbor_h_score)
 
                         #if new path to neighbor is shorter or neighbor is not in open
                         if new_neighbor_g_score < neighbor_g_score or neighbor_node.is_open() == False:
                             neighbor_node.set_g_score(new_neighbor_g_score)
 
                             #to-do: set parent of neighbor to current
+                            neighbor_node.set_parent(current)
 
                             if neighbor_node.is_open() == False:
                                 neighbor_node.make_open()
                                 open_set.append(neighbor_node)
                         draw_rect(screen, neighbor_node)
+            
+            if event.type == pygame.KEYDOWN and start_node != None and success == True:  
+                while traceback_node != start_node:
+                    traceback_node_arr.append(traceback_node.get_parent())
+                    traceback_node = traceback_node.get_parent()
+                
+                for i in range(len(traceback_node_arr)):
+                    path = traceback_node_arr[i]
+                    path.make_path()
+                    draw_rect(screen,path)
+                
             
 
             
