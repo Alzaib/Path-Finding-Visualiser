@@ -155,6 +155,7 @@ def get_neighbor(node, num_nodes):
 
     if (y_pos+1<num_nodes):
         down = (x_pos, y_pos+1)
+    
 
     return [left, right, up, down]
 
@@ -217,9 +218,9 @@ def main():
                 exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_x_pos, mouse_y_pos = pygame.mouse.get_pos()
-                mouse_x_pos = math.floor(mouse_x_pos/NODE_WIDTH)
-                mouse_y_pos = math.floor(mouse_y_pos/NODE_WIDTH)
+                #mouse_x_pos, mouse_y_pos = pygame.mouse.get_pos()
+                #mouse_x_pos = math.floor(mouse_x_pos/NODE_WIDTH)
+                #mouse_y_pos = math.floor(mouse_y_pos/NODE_WIDTH)
                 s_n, e_n = make_environment(screen, node_arr)
                 if s_n != None:
                     start_node = s_n
