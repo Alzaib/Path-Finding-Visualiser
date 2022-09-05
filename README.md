@@ -4,7 +4,7 @@ A visualization tool to better understand the popular path finding algorithms su
 
 ## Demo (A* Algorithm) ##
 See the links under acknowledgement section for detail explaination for this algorithm
-
+![gif](Demo/a-star.gif)
 
 ## Setup and Requirements ##
 1. Python 3.6
